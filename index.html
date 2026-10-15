@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="en-IN">
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'none'; form-action 'none'; base-uri 'none'; object-src 'none'" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="referrer" content="no-referrer" />
+    <title>GST Pack for Shopify</title>
+    <meta
+      name="description"
+      content="Turn a Shopify order export into GST invoices, a GSTR-1 file and a Tally import, in your browser. Your orders never leave your computer."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23165c4f'/%3E%3Cpath d='M9 9h14v3H9zm0 6h14v3H9zm0 6h9v3H9z' fill='%23fff'/%3E%3C/svg%3E"
+    />
+    <script type="module" crossorigin src="./assets/index-C4bLKjR6.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-X8IoFUjL.css">
+  </head>
+  <body>
+    <header class="masthead">
+      <div class="wrap">
+        <p class="eyebrow">Free while in beta</p>
+        <h1>Your month's GST paperwork, from a Shopify export</h1>
+        <p class="lede">
+          Add your Shopify order export. You get a GST invoice for every order, credit notes for refunds, your GSTR-1
+          file in the portal's upload format with sheets your CA can check, and a file to import into Tally.
+        </p>
+        <ul class="promises">
+          <li>
+            <strong>Your orders stay on your computer.</strong> Everything runs in this browser tab. The page has no
+            server to send them to, and it is set up so it cannot connect anywhere. Once it has loaded, you can even go
+            offline.
+          </li>
+          <li>
+            <strong>Nothing is issued.</strong> This is a preview. Every invoice is marked SPECIMEN, and no invoice
+            numbers are used up.
+          </li>
+        </ul>
+        <button type="button" id="sample" class="button secondary">Try it with sample data first</button>
+      </div>
+    </header>
+
+    <noscript>
+      <p class="wrap noscript">This page works in your browser with JavaScript, which is turned off. Turn it on to use it.</p>
+    </noscript>
+
+    <main class="wrap">
+      <form id="pack-form" novalidate>
+        <section class="step" aria-labelledby="step-orders">
+          <h2 id="step-orders"><span class="num" aria-hidden="true">1</span> Your Shopify orders</h2>
+          <p class="hint">In Shopify admin, open Orders, then Export. Pick the month, then "Plain CSV file".</p>
+          <div class="field">
+            <label for="orders">Order export (.csv)</label>
+            <input type="file" id="orders" accept=".csv,text/csv" />
+            <p id="orders-status" class="status" aria-live="polite"></p>
+          </div>
+
+          <fieldset class="field">
+            <legend>Do your prices include GST?</legend>
+            <label class="choice">
+              <input type="radio" name="prices" value="inclusive" checked />
+              Yes, the price customers see includes GST (most Indian stores)
+            </label>
+            <label class="choice">
+              <input type="radio" name="prices" value="exclusive" />
+              No, GST is added on top at checkout
+            </label>
+          </fieldset>
+
+          <div class="field">
+            <label for="period">Month</label>
+            <select id="period">
+              <option value="">All orders in the file</option>
+            </select>
+            <p class="hint">The GSTR-1 upload file covers one month, so pick one to get it.</p>
+          </div>
+        </section>
+
+        <section class="step" aria-labelledby="step-business">
+          <h2 id="step-business"><span class="num" aria-hidden="true">2</span> Your business</h2>
+          <p class="hint">As on your GST registration. These go on every invoice.</p>
+          <div class="grid">
+            <div class="field">
+              <label for="legalName">Legal name</label>
+              <input id="legalName" name="legalName" autocomplete="organization" />
+            </div>
+            <div class="field">
+              <label for="tradeName">Trade name <span class="optional">(optional)</span></label>
+              <input id="tradeName" name="tradeName" />
+            </div>
+            <div class="field">
+              <label for="gstin">GSTIN</label>
+              <input id="gstin" name="gstin" maxlength="15" autocapitalize="characters" spellcheck="false" />
+              <p id="gstin-state" class="status" aria-live="polite"></p>
+            </div>
+            <div class="field">
+              <label for="addressLine1">Address</label>
+              <input id="addressLine1" name="addressLine1" autocomplete="street-address" />
+            </div>
+            <div class="field">
+              <label for="location">City</label>
+              <input id="location" name="location" autocomplete="address-level2" />
+            </div>
+            <div class="field">
+              <label for="pincode">PIN code</label>
+              <input id="pincode" name="pincode" inputmode="numeric" maxlength="6" autocomplete="postal-code" />
+            </div>
+          </div>
+        </section>
+
+        <section class="step" aria-labelledby="step-products">
+          <h2 id="step-products"><span class="num" aria-hidden="true">3</span> Your products</h2>
+          <p class="hint">
+            Each product needs its HSN code and GST rate; your CA can confirm them. A product you leave blank is not
+            invoiced at a guessed rate: its orders are listed for you to review.
+          </p>
+          <div class="actions">
+            <label class="button secondary file-button">
+              Load a saved product list
+              <input type="file" id="catalogue-file" accept=".csv,text/csv" class="visually-hidden" />
+            </label>
+            <button type="button" id="save-catalogue" class="button secondary" disabled>Save this list for next month</button>
+          </div>
+          <p id="catalogue-status" class="status" aria-live="polite"></p>
+          <p id="products-empty" class="empty">Add your order export in step 1 to list your products here.</p>
+          <div class="table-scroll" hidden>
+            <table id="products">
+              <thead>
+                <tr>
+                  <th scope="col">Product</th>
+                  <th scope="col">HSN code</th>
+                  <th scope="col">GST %</th>
+                  <th scope="col">If no GST</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+          <datalist id="rates">
+            <option value="5"></option>
+            <option value="18"></option>
+            <option value="40"></option>
+            <option value="3"></option>
+            <option value="12"></option>
+            <option value="28"></option>
+          </datalist>
+        </section>
+
+        <details class="step optional-step">
+          <summary>
+            <h2><span class="num" aria-hidden="true">4</span> Refunds and business buyers <span class="optional">(optional)</span></h2>
+          </summary>
+          <div class="field">
+            <label for="refunds">Refunds this month (.csv)</label>
+            <input type="file" id="refunds" accept=".csv,text/csv" />
+            <p class="hint">
+              Shopify's export does not list refunds, so add one row per refund:
+              <code>order,date,item,quantity,amount</code>. Leave item and quantity blank for a whole amount.
+              <button type="button" class="link" data-template="refunds">Download a blank refunds file</button>
+            </p>
+          </div>
+          <div class="field">
+            <label for="buyers">Business buyers' GSTINs (.csv)</label>
+            <input type="file" id="buyers" accept=".csv,text/csv" />
+            <p class="hint">
+              For orders from GST-registered businesses: <code>order,gstin</code>, one row per order.
+              <button type="button" class="link" data-template="buyers">Download a blank buyers file</button>
+            </p>
+          </div>
+        </details>
+
+        <div id="problems" class="problems" role="alert" hidden></div>
+        <button type="submit" class="button primary big">Make my GST pack</button>
+      </form>
+
+      <section id="results" class="results" aria-labelledby="results-title" hidden tabindex="-1">
+        <h2 id="results-title">Your GST pack <span class="tag">preview</span></h2>
+        <dl class="stats">
+          <div><dt>Invoices</dt><dd id="stat-invoices">0</dd></div>
+          <div><dt>Credit notes</dt><dd id="stat-notes">0</dd></div>
+          <div><dt>Need your review</dt><dd id="stat-review">0</dd></div>
+          <div><dt>Left out</dt><dd id="stat-skipped">0</dd></div>
+        </dl>
+        <div class="actions">
+          <button type="button" id="download-zip" class="button primary">Download everything (.zip)</button>
+          <button type="button" id="download-gstr1" class="button secondary">GSTR-1 file (.json)</button>
+          <button type="button" id="download-tally" class="button secondary">Tally import (.xml)</button>
+        </div>
+        <p id="gstr1-note" class="hint"></p>
+
+        <div id="review-block" hidden>
+          <h3>Needs your review</h3>
+          <p class="hint">These were not invoiced, so nothing wrong goes out. Fix each, then make the pack again.</p>
+          <div class="table-scroll">
+            <table id="review">
+              <thead>
+                <tr><th scope="col">Order</th><th scope="col">Issue</th><th scope="col">Detail</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="invoice-block" hidden>
+          <h3><label for="invoice-pick">Look at a document</label></h3>
+          <select id="invoice-pick"></select>
+          <iframe id="invoice-view" title="Selected invoice or credit note" sandbox></iframe>
+        </div>
+
+        <details>
+          <summary>Full summary</summary>
+          <pre id="summary"></pre>
+        </details>
+      </section>
+
+      <section class="next" aria-labelledby="next-title">
+        <h2 id="next-title">Before you rely on it</h2>
+        <ul>
+          <li>E-invoicing (IRN) and IMS support are not built yet.</li>
+          <li>The GSTR-1 file passes GSTN's published schema, but it has not yet been uploaded for a live filing.</li>
+          <li>Have your CA check the HSN codes, rates and the first month's output.</li>
+        </ul>
+        <p>
+          Want numbered invoices you can actually issue, or something looks wrong? Email
+          <a href="mailto:vdeshmukh1697@gmail.com?subject=GST%20pack">vdeshmukh1697@gmail.com</a> and I'll set it up
+          with you.
+        </p>
+      </section>
+    </main>
+
+    <footer class="wrap footer">
+      <p>Made by Vikrant Deshmukh. Free while in beta. Not a substitute for your CA's review.</p>
+    </footer>
+
+  </body>
+</html>
